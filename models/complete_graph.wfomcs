@@ -1,0 +1,5 @@
+\forall X: (\forall Y: ( (S(X,Y)->E(X,Y)) & (S(X,Y)->S(Y,X)) )) &
+\forall X: (~E(X,X))
+
+V = 3
+|E| = 6

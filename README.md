@@ -1,32 +1,32 @@
-# Exact Lifted Sampler for Two-Variable Logic
+# Calculate F-poly or Tutte poly by WFOMC
 
-This tool is for sampling instances or combinatorical structures from the two-variable fragment of first-order logic.
+This tool is for calculating the F-poly or the Tutte poly from the two-variable fragment of first-order logic.
 
-
+**Note that currently the Tutte poly here refers to the formula in Proposition 2. Todo: implement the final Tutte poly.**
 
 ## Input format
 
 1. First-order sentence with at most two logic variables, see [fol_grammer.py](sampling_fo2/parser/fol_grammer.py) for details, e.g.,
-  * `\forall X: (\forall Y: (R(X, Y) <-> Z(X, Y)))`
-  * `\forall X: (\exists Y: (R(X, Y)))`
-  * `\exists X: (F(X) -> \forall Y: (R(X, Y)))`
-  * ..., even more complex sentence...
+   * `\forall X: (\forall Y: (R(X, Y) <-> Z(X, Y)))`
+   * `\forall X: (\exists Y: (R(X, Y)))`
+   * `\exists X: (F(X) -> \forall Y: (R(X, Y)))`
+   * ..., even more complex sentence...
 2. Domain: 
-  * `domain=3` or
-  * `domain={p1, p2, p3}`
+   * `domain=3` or
+   * `domain={p1, p2, p3}`
 3. Weighting (optional): `positve_weight negative_weight predicate`
 4. Cardinality constraint (optional): 
-  * `|P| = k`
-  * `|P| > k`
-  * `|P| >= k`
-  * `|P| < k`
-  * `|P| <= k`
-  * ...
-
+   * `|P| = k`
+   * `|P| > k`
+   * `|P| >= k`
+   * `|P| < k`
+   * `|P| <= k`
+   * ...
 
 ### Example input file
 
 2 colored graphs:
+
 ```
 \forall X: (\forall Y: ((E(X,Y) -> E(Y,X)) &
                         (R(X) | B(X)) &
@@ -36,8 +36,8 @@ This tool is for sampling instances or combinatorical structures from the two-va
 V = 10
 ```
 
-
 2 regular graphs:
+
 ```
 \forall X: (~E(X,X)) &
 \forall X: (\forall Y: ((E(X,Y) -> E(Y,X)) &
@@ -49,9 +49,11 @@ V = 10
 V = 6
 |E| = 12
 ```
+
 > Note: You need to convert SC2 sentence into FO2 sentence with cardinality constraints by yourself.
 
 Sampling possible worlds from `friends-smokes` MLN:
+
 ```
 \forall X: (~fr(X,X)) &
 \forall X: (\forall Y: (fr(X,Y) -> fr(Y,X))) &
@@ -64,26 +66,43 @@ person = 10
 
 More examples are in [models](models/)
 
-
 ### Installation
+
 Install requirements:
+
 ```
 $ pip install -r requirements.txt
 ```
+
 Add path to your PYTHONPATH:
+
 ```
 $ export PYTHONPATH=$(pwd)/sampling_fo2:$PYTHONPATH
 ```
 
-
 ### How to use
-Run the following command:
+
 ```
-$ python sampling_fo2/sampler.py -i models/friendsmoker.mln -k 10 -s
+usage: fpoly.py [-h] --input INPUT [--output_dir OUTPUT_DIR] [--func {fpoly,tutte}] --pred PRED
+                [--debug]
+
+F-polynomial for MLN
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT, -i INPUT
+                        mln file
+  --output_dir OUTPUT_DIR, -o OUTPUT_DIR
+  --func {fpoly,tutte}, -f {fpoly,tutte}
+                        the function: fpoly or tutte
+  --pred PRED, -p PRED  the special binary predicate
+  --debug
 ```
-Find more arguments: 
+
+E.g., 
+
 ```
-$ python sampling_fo2/sampler.py -h
+$ python sampling_fo2/fpoly.py -i models/complete_graph.wfomcs -f fpoly -p S
 ```
 
 ## References
