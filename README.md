@@ -1,8 +1,8 @@
 # Calculate F-poly or Tutte poly by WFOMC
 
-This tool is for calculating the F-poly or the Tutte poly from the two-variable fragment of first-order logic.
+This tool is for calculating the F-poly, Proposition 2 or the Tutte poly from the two-variable fragment of first-order logic.
 
-**Note that currently the Tutte poly here refers to the formula in Proposition 2. Todo: implement the final Tutte poly.**
+**Note that the special binary predicate should have default weights (1,1).**
 
 ## Input format
 
@@ -83,7 +83,7 @@ $ export PYTHONPATH=$(pwd)/sampling_fo2:$PYTHONPATH
 ### How to use
 
 ```
-usage: fpoly.py [-h] --input INPUT [--output_dir OUTPUT_DIR] [--func {fpoly,tutte}] --pred PRED
+usage: fpoly.py [-h] --input INPUT [--output_dir OUTPUT_DIR] [--func {fpoly,prop2，tutte}] --pred PRED
                 [--debug]
 
 F-polynomial for MLN
@@ -93,8 +93,8 @@ optional arguments:
   --input INPUT, -i INPUT
                         mln file
   --output_dir OUTPUT_DIR, -o OUTPUT_DIR
-  --func {fpoly,tutte}, -f {fpoly,tutte}
-                        the function: fpoly or tutte
+  --func {fpoly,prop2,tutte}, -f {fpoly,prop2,tutte}
+                        the function wanted
   --pred PRED, -p PRED  the special binary predicate
   --debug
 ```

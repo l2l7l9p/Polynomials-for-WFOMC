@@ -2,50 +2,57 @@ from symengine import Rational, var, Expr, Symbol
 from .polynomial import Rational, Poly
 
 
-def lagrange_1d(n, evaluate) :
+def lagrange_1d(x, evaluate) :
     '''
-    Input: [f(0), f(1), ..., f(n)]
+    Input: [x1, ..., xn], [f(x1), ..., f(xn)]
+        (x should be pairwise different)
     Output: f
     '''
+    n = len(x)
     res = 0
-    for i in range(n+1) :
-        L_numerator = 1
-        L_denominator = 1
-        for j in range(n+1) :
+    for i in range(n) :
+        L_numerator, L_denominator = 1, 1
+        for j in range(n) :
             if i!=j :
-                L_numerator *= Symbol('x')-j
-                L_denominator *= i-j
+                L_numerator *= Symbol('x')-x[j]
+                L_denominator *= x[i]-x[j]
         res += L_numerator / L_denominator * evaluate[i]
     return res.expand()
 
 
-def lagrange_2d(n, evaluate) :
+def lagrange_2d(x, y, evaluate) :
     '''
-    Input: [[f(0,0), f(0,1), ..., f(0,n)],
-            ...
-            [f(n,0), f(n,1), ..., f(n,n)]]
+    Input: [x1, ..., xn], [y1, ..., ym], [[f(x1,y1), f(x1,y2), ..., f(x1,ym)],
+                                          ...
+                                          [f(xn,y1), f(x1,y2), ..., f(xn,ym)]]
+        (x should be pairwise different)
+        (y should be pairwise different)
     Output: f
     '''
-    Lx_numerator = []
-    Ly_numerator = []
-    L_denominator = []
-    for i in range(n+1) :
-        numerator_x = 1
-        numerator_y = 1
-        denominator = 1
-        for j in range(n+1) :
+    n = len(x)
+    m = len(y)
+    Lx_numerator, Ly_numerator, Lx_denominator, Ly_denominator = [], [], [], []
+    for i in range(n) :
+        numerator, denominator = 1, 1
+        for j in range(n) :
             if i!=j :
-                numerator_x *= Symbol('x')-j
-                numerator_y *= Symbol('y')-j
-                denominator *= i-j
-        Lx_numerator.append(numerator_x)
-        Ly_numerator.append(numerator_y)
-        L_denominator.append(denominator)
+                numerator *= Symbol('x')-x[j]
+                denominator *= x[i]-x[j]
+        Lx_numerator.append(numerator)
+        Lx_denominator.append(denominator)
+    for i in range(m) :
+        numerator, denominator = 1, 1
+        for j in range(m) :
+            if i!=j :
+                numerator *= Symbol('y')-y[j]
+                denominator *= y[i]-y[j]
+        Ly_numerator.append(numerator)
+        Ly_denominator.append(denominator)
     
     res = 0
-    for i in range(n+1) :
-        for j in range(n+1) :
-            Lx = Lx_numerator[i] / L_denominator[i]
-            Ly = Ly_numerator[j] / L_denominator[j]
+    for i in range(n) :
+        for j in range(m) :
+            Lx = Lx_numerator[i] / Lx_denominator[i]
+            Ly = Ly_numerator[j] / Ly_denominator[j]
             res += Lx * Ly * evaluate[i][j]
     return res.expand()

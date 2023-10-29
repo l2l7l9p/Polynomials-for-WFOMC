@@ -16,6 +16,7 @@ import logzero
 from logzero import logger
 from typing import Callable
 from contexttimer import Timer
+from symengine import Symbol
 
 from sampling_fo2.utils import PREDS_FOR_EXISTENTIAL, MultinomialCoefficients, multinomial, \
     multinomial_less_than, RingElement, Rational, round_rational, lagrange
@@ -30,6 +31,7 @@ from sampling_fo2.network.constraint import CardinalityConstraint
 class Func(Enum):
     FPOLY = 'fpoly'
     TUTTE = 'tutte'
+    PROP2 = 'prop2'
 
     def __str__(self):
         return self.value
@@ -57,7 +59,6 @@ def get_two_table_weight_with_v( cell_graph: CellGraph,
 def F_poly_evaluate(cell_graph: CellGraph,
                     domain_size: int,
                     special_pred: Pred,
-                    constraint: CardinalityConstraint,
                     v: int = None ) -> list :
     cells = cell_graph.get_cells()
     n_cells = len(cells)
@@ -79,25 +80,22 @@ def F_poly_evaluate(cell_graph: CellGraph,
                     coef = MultinomialCoefficients.coef(partition_cur)
                     val_cur = Rational(1, 1) * coef * MultinomialCoefficients.comb(domain_size_rest, domain_size_cur)
                     
-                    for i in range(n_cells):
-                        n_i = partition_cur[i]
+                    for i, (cell_i, n_i) in enumerate(zip(cells, partition_cur)):
                         if n_i == 0:
                             continue
-                        val_cur *= cell_graph.get_cell_weight(cells[i]) ** n_i
-                        val_cur *= get_two_table_weight_with_v(cell_graph, cells[i], cells[i], special_pred, v) ** (n_i * (n_i - 1) // 2)
-                        for j in range(i+1, n_cells):
-                            n_j = partition_cur[j]
-                            if n_j == 0:
+                        val_cur *= cell_graph.get_cell_weight(cell_i) ** n_i
+                        val_cur *= get_two_table_weight_with_v(cell_graph, cell_i, cell_i, special_pred, v) ** (n_i * (n_i - 1) // 2)
+                        for j, (cell_j, n_j) in enumerate(zip(cells, partition_cur)):
+                            if (j<=i or n_j==0):
                                 continue
-                            val_cur *= get_two_table_weight_with_v(cell_graph, cells[i], cells[j], special_pred, v) ** (n_i * n_j)
-                        for j in range(n_cells):
-                            n_j = partition_last[j]
+                            val_cur *= get_two_table_weight_with_v(cell_graph, cell_i, cell_j, special_pred, v) ** (n_i * n_j)
+                        for j, (cell_j, n_j) in enumerate(zip(cells, partition_last)):
                             if n_j == 0:
                                 continue
                             evidence_special_pred_false = frozenset([
                                 AtomicFormula(special_pred,(Const('a'), Const('b')),False),
                                 AtomicFormula(special_pred,(Const('b'), Const('a')),False) ])
-                            val_cur *= cell_graph.get_two_table_weight((cells[i], cells[j]), evidence_special_pred_false) ** (n_i * n_j)
+                            val_cur *= cell_graph.get_two_table_weight((cell_i, cell_j), evidence_special_pred_false) ** (n_i * n_j)
                     
                     partition_new = tuple(map(sum,zip(partition_last,partition_cur)))
                     if (dp_cur.get(partition_new)==None) :
@@ -107,41 +105,61 @@ def F_poly_evaluate(cell_graph: CellGraph,
         evaluate_u = sum( dp_cur[partition]
             for partition in multinomial(n_cells, domain_size)
                 if dp_cur.get(partition)!=None )
-        evaluate_u = constraint.decode_poly(evaluate_u)
         evaluate.append(evaluate_u)
         dp_last = dp_cur.copy()
         dp_cur.clear()
     
-    logger.info('evaluate when v=%s: %s',v,evaluate)
     return evaluate
 
 
-def F_poly(context: WFOMCContext, special_pred: Pred) -> np.poly1d :
+def F_poly(context: WFOMCContext, special_pred: Pred) :
     '''
     Return F-poly in the form of symengine expr
+    To evaluate f_poly(x0) for some x0, use f_poly.subs(Symbol('x'),x0)
     '''
     domain_size = len(context.domain)
     cell_graph = CellGraph(context.formula, context.get_weight)
     MultinomialCoefficients.setup(domain_size)
     
-    evaluate = F_poly_evaluate(cell_graph, domain_size, special_pred, context.cardinality_constraint)
-    f_poly = lagrange.lagrange_1d(domain_size, evaluate)
+    evaluate = F_poly_evaluate(cell_graph, domain_size, special_pred)
+    evaluate = list(map(context.decode_result, evaluate))
+    logger.info('evaluate: %s',evaluate)
+    f_poly = lagrange.lagrange_1d(list(range(domain_size+1)), evaluate)
     return f_poly
 
 
-def Tutte_poly(context: WFOMCContext, special_pred: Pred) -> np.array :
+def Prop2(context: WFOMCContext, special_pred: Pred) :
     '''
-    Return Tutte poly in the form of symengine expr
+    Return the poly in Proposition 2 in the form of symengine expr
+    To evaluate prop2(x0,y0) for some x0 and y0, use prop2.subs({Symbol('x'): x0, Symbol('y'): y0})
     '''
     domain_size = len(context.domain)
+    n_edges = domain_size * (domain_size-1) // 2
     cell_graph = CellGraph(context.formula, context.get_weight)
     MultinomialCoefficients.setup(domain_size)
     
     evaluate = []
-    for v in range(domain_size+1) :
-        evaluate.append(F_poly_evaluate(cell_graph, domain_size, special_pred, context.cardinality_constraint, v))
-    evaluate = [[evaluate[v][u] for v in range(domain_size+1)] for u in range(domain_size+1)]
-    tutte_poly = lagrange.lagrange_2d(domain_size, evaluate)
+    for v in range(n_edges+1) :
+        evaluate_v = F_poly_evaluate(cell_graph, domain_size, special_pred, v)
+        evaluate_v = list(map(context.decode_result, evaluate_v))
+        logger.info('evaluate when v=%s: %s',v,evaluate_v)
+        evaluate.append(evaluate_v)
+    evaluate = [[evaluate[v][u] for v in range(n_edges+1)] for u in range(domain_size+1)]
+    prop2 = lagrange.lagrange_2d(list(range(domain_size+1)), list(range(n_edges+1)), evaluate)
+    return prop2
+
+
+def Tutte_poly(context: WFOMCContext, special_pred: Pred) :
+    '''
+    Return Tutte poly in the form of symengine expr
+    To evaluate tutte_poly(x0,y0) for some x0 and y0, use tutte_poly.subs({Symbol('x'): x0, Symbol('y'): y0})
+    '''
+    domain_size = len(context.domain)
+    
+    prop2 = Prop2(context, special_pred)
+    x, y, u, v = Symbol('x'), Symbol('y'), Symbol('u'), Symbol('v')
+    tutte_poly_mid = (prop2.subs({x: u*v-1, y: v}).expand() / (u*v**domain_size)).expand()
+    tutte_poly = tutte_poly_mid.subs({u: x-1, v: y-1}).expand()
     return tutte_poly
 
 
@@ -156,7 +174,7 @@ def parse_args():
                         default='./check-points')
     parser.add_argument('--func', '-f', type=Func,
                         choices=list(Func), default=Func.FPOLY,
-                        help='the function: fpoly or tutte')
+                        help='the function wanted')
     parser.add_argument('--pred', '-p', type=str, required=True,
                         help='the special binary predicate')
     parser.add_argument('--debug', action='store_true', default=False)
@@ -181,7 +199,11 @@ if __name__ == '__main__':
     
     if (args.func==Func.FPOLY) :
         f_poly = F_poly(context, Pred(args.pred, 2))
-        logger.info('F-poly: \n%s', f_poly)
+        logger.info('F-poly: %s', f_poly)
+    elif (args.func==Func.PROP2) :
+        prop2 = Prop2(context, Pred(args.pred, 2))
+        logger.info('Prop2: %s', prop2)
     elif (args.func==Func.TUTTE) :
         tutte_poly = Tutte_poly(context, Pred(args.pred, 2))
-        logger.info('Tutte poly: \n%s', tutte_poly)
+        logger.info('Tutte poly: %s', tutte_poly)
+        logger.info('Tutte poly at (1,1): %s', tutte_poly.subs({Symbol('x'): 1, Symbol('y'): 1}))

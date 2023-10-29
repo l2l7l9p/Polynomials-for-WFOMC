@@ -1,3 +1,0 @@
-\forall X: (\forall Y: ( E(X,Y) & (S(X,Y)->E(X,Y)) & (S(X,Y)->S(Y,X)) ))
-
-V = 2
