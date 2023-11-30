@@ -3,6 +3,8 @@ from functools import reduce
 
 from collections import defaultdict
 
+from sampling_fo2.utils import AUXILIARY_PRED_NAME
+
 from .syntax import *
 
 PREDICATES = defaultdict(list)
@@ -65,3 +67,44 @@ def exactly_one(preds: list[Pred]) -> QuantifiedFormula:
     if len(preds) == 1:
         return top
     return QuantifiedFormula(Universal(X), exactly_one_qf(preds))
+
+def sc2_to_snf_with_cardinalit_constraints(formula: QuantifiedFormula, domain: set[Const]):
+    """
+    Only need to deal with \forall X \exists_{=k} Y: f(X,Y)
+    """
+    uni_formula = top
+    ext_formulas = []
+    
+    cnt_quantified_formula = formula.quantified_formula.quantified_formula
+    cnt_quantifier = formula.quantified_formula.quantifier_scope
+    count_param = cnt_quantifier.count_param
+        
+    # Follow the steps in "A Complexity Upper Bound for 
+    # Some Weighted First-Order Model Counting Problems With Counting Quantifiers"
+    # (2)
+    aux_pred = new_predicate(2, AUXILIARY_PRED_NAME)
+    aux_atom = aux_pred(X, Y)
+    uni_formula = uni_formula & (cnt_quantified_formula.equivalent(aux_atom))
+    # (3)
+    sub_aux_preds, sub_aux_atoms = [], []
+    for i in range(count_param):
+        aux_pred_i = new_predicate(2, f'{aux_pred.name}_')
+        aux_atom_i = aux_pred_i(X, Y)
+        sub_aux_preds.append(aux_pred_i)
+        sub_aux_atoms.append(aux_atom_i)
+        sub_ext_formula = QuantifiedFormula(Existential(Y), aux_atom_i) 
+        sub_ext_formula = QuantifiedFormula(Universal(X), sub_ext_formula)   
+        ext_formulas.append(sub_ext_formula)
+    # (4)
+    for i in range(count_param):
+        for j in range(i):
+            uni_formula = uni_formula & (~sub_aux_atoms[i] | ~sub_aux_atoms[j])
+    # (5)
+    or_sub_aux_atoms = QFFormula(False)
+    for atom in sub_aux_atoms:
+        or_sub_aux_atoms = or_sub_aux_atoms | atom
+    uni_formula = uni_formula & or_sub_aux_atoms.equivalent(aux_atom)
+    # (6)
+    cardinality_constraint = (aux_pred, ('=', len(domain) * count_param))
+    
+    return uni_formula, ext_formulas, cardinality_constraint

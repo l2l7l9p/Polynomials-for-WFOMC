@@ -68,16 +68,10 @@ More examples are in [models](models/)
 
 ### Installation
 
-Install requirements:
+Install the package:
 
 ```
-$ pip install -r requirements.txt
-```
-
-Add path to your PYTHONPATH:
-
-```
-$ export PYTHONPATH=$(pwd)/sampling_fo2:$PYTHONPATH
+$ pip install -e .
 ```
 
 ### How to use
@@ -106,21 +100,3 @@ $ python sampling_fo2/fpoly.py -i models/complete_graph.wfomcs -f fpoly -p S
 ```
 
 ## References
-
-```
-@inproceedings{DBLP:conf/lics/WangP0K23,
-  author       = {Yuanhong Wang and
-                  Juhua Pu and
-                  Yuyi Wang and
-                  Ondrej Kuzelka},
-  title        = {On Exact Sampling in the Two-Variable Fragment of First-Order Logic},
-  booktitle    = {{LICS}},
-  pages        = {1--13},
-  year         = {2023},
-  url          = {https://doi.org/10.1109/LICS56636.2023.10175742},
-  doi          = {10.1109/LICS56636.2023.10175742},
-  timestamp    = {Thu, 20 Jul 2023 11:32:59 +0200},
-  biburl       = {https://dblp.org/rec/conf/lics/WangP0K23.bib},
-  bibsource    = {dblp computer science bibliography, https://dblp.org}
-}
-```

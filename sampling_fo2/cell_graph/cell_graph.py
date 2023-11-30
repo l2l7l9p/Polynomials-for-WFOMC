@@ -9,7 +9,7 @@ from logzero import logger
 from sympy import Poly
 from copy import deepcopy
 
-from sampling_fo2.fol.snf import SNF
+from sampling_fo2.fol.sc2 import SC2
 
 from sampling_fo2.fol.syntax import AtomicFormula, Const, Pred, QFFormula, a, b, c
 from sampling_fo2.utils import Rational, RingElement
@@ -63,7 +63,7 @@ class CellGraph(object):
                               TwoTable] = self._build_two_tables()
 
     def _ground_on_tuple(self, formula: QFFormula,
-                         c1: Const, c2: Const = None) -> SNF:
+                         c1: Const, c2: Const = None) -> QFFormula:
         variables = formula.vars()
         if len(variables) > 2:
             raise RuntimeError(

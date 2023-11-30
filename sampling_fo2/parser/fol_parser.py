@@ -1,6 +1,6 @@
 from lark import Transformer, Lark
 from enum import Enum
-from sampling_fo2.fol.snf import to_snf
+from sampling_fo2.fol.sc2 import to_sc2
 from sampling_fo2.fol.syntax import Existential
 from sampling_fo2.fol.utils import exactly_one
 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
                       start='ffl')
     tree = fol_parser.parse(text)
     formula = FOLTransformer().transform(tree)
-    formula = to_snf(formula)
+    formula = to_sc2(formula)
     print(formula)
     # print(formula.atoms())
     # print(formula.vars())

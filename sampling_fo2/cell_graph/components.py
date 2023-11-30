@@ -28,6 +28,7 @@ class Cell(object):
         object.__setattr__(self, '_identifier',
                            frozenset(zip(self.preds, self.code)))
 
+    @functools.lru_cache(maxsize=None)
     def get_evidences(self, term: Term) -> FrozenSet[AtomicFormula]:
         evidences: set[AtomicFormula] = set()
         for i, p in enumerate(self.preds):

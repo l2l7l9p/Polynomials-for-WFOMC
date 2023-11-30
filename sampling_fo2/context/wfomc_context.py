@@ -1,8 +1,7 @@
 from __future__ import annotations
-
 from logzero import logger
-from sampling_fo2.fol.snf import SNF
-from sampling_fo2.fol.utils import new_predicate
+from sampling_fo2.fol.sc2 import SC2
+from sampling_fo2.fol.utils import new_predicate, sc2_to_snf_with_cardinalit_constraints
 
 from sampling_fo2.network.constraint import CardinalityConstraint
 from sampling_fo2.fol.syntax import *
@@ -18,9 +17,12 @@ class WFOMCContext(object):
 
     def __init__(self, problem: WFOMCSProblem):
         self.domain: set[Const] = problem.domain
-        self.sentence: SNF = problem.sentence
+        self.sentence: SC2 = problem.sentence
         self.weights: dict[Pred, tuple[Rational, Rational]] = problem.weights
         self.cardinality_constraint: CardinalityConstraint = problem.cardinality_constraint
+
+        if self.cardinality_constraint == None: 
+            self.cardinality_constraint = CardinalityConstraint({})
 
         logger.info('sentence: \n%s', self.sentence)
         logger.info('domain: \n%s', self.domain)
@@ -91,13 +93,24 @@ class WFOMCContext(object):
         return formula
 
     def _build(self):
-        if self.contain_existential_quantifier():
-            self.formula = self._skolemize()
-        else:
-            self.formula = self.sentence.uni_formula
-            while(not isinstance(self.formula, QFFormula)):
-                self.formula = self.formula.quantified_formula
-
+        self.formula = self.sentence.uni_formula
+        while(not isinstance(self.formula, QFFormula)):
+            self.formula = self.formula.quantified_formula
+        
+        self.ext_formulas = self.sentence.ext_formulas
+        if self.sentence.contain_counting_quantifier():
+            logger.info('translate SC2 to SNF')
+            for cnt_formula in self.sentence.cnt_formulas:
+                uni_formula, ext_formulas, cardinality_constraint = \
+                    sc2_to_snf_with_cardinalit_constraints(cnt_formula, self.domain)
+                self.formula = self.formula & uni_formula
+                self.ext_formulas = self.ext_formulas + ext_formulas
+                self.cardinality_constraint.add(*cardinality_constraint)
+        self.cardinality_constraint.build()
+        
+        for ext_formula in self.ext_formulas:
+            self.formula = self.formula & self._skolemize_one_formula(ext_formula)
+            
         # self.formula = self.formula.simplify()
 
         if self.contain_cardinality_constraint():

@@ -32,15 +32,6 @@ class TreeConstraint(Constraint):
 class CardinalityConstraint(Constraint):
     def __init__(self, pred2card: dict[Pred, tuple[str, int]]):
         self.pred2card: dict[Pred, tuple[str, int]] = pred2card
-        self.gen_vars: list[Symbol] = list()
-        self.validator: str = ''
-        validator_list: list[str] = []
-        for _, (comp, card) in self.pred2card.items():
-            if comp == '=':
-                comp = '=='
-            validator_list.append('{{}} {} {}'.format(comp, card))
-        self.validator = ' and '.join(validator_list)
-        logger.info('cardinality validator: %s', self.validator)
 
     def preds(self):
         return list(self.pred2card.keys())
@@ -68,6 +59,20 @@ class CardinalityConstraint(Constraint):
 
     def valid(self, degrees: list[int]) -> bool:
         return eval(self.validator.format(*degrees))
+    
+    def add(self, k: Pred, v: tuple[str, int]):
+        self.pred2card[k] = v
+        
+    def build(self):
+        self.gen_vars: list[Symbol] = list()
+        self.validator: str = ''
+        validator_list: list[str] = []
+        for _, (comp, card) in self.pred2card.items():
+            if comp == '=':
+                comp = '=='
+            validator_list.append('{{}} {} {}'.format(comp, card))
+        self.validator = ' and '.join(validator_list)
+        logger.info('cardinality validator: %s', self.validator)
 
     def __str__(self):
         s = ''

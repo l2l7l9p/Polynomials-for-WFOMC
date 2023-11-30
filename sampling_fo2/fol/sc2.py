@@ -4,23 +4,31 @@ from functools import reduce
 from logzero import logger
 from typing import Callable, Union
 
-
 from sampling_fo2.fol.utils import new_scott_predicate
 from .syntax import *
 from .syntax import FOLSyntaxError
 
 
-class SNF(Formula):
-    def __init__(self, uni_formula: QuantifiedFormula = None, ext_formulas: list[QuantifiedFormula] = None):
+class SC2(Formula):
+    def __init__(self, uni_formula: QuantifiedFormula = None, 
+                       ext_formulas: list[QuantifiedFormula] = None,
+                       cnt_formulas: list[QuantifiedFormula] = None):
         self.uni_formula: QuantifiedFormula = uni_formula
         self.ext_formulas: list[QuantifiedFormula] = ext_formulas or []
+        self.cnt_formulas: list[QuantifiedFormula] = cnt_formulas or []
         self.index = 0
 
     def contain_existential_quantifier(self) -> bool:
         return len(self.ext_formulas) > 0
+    
+    def contain_counting_quantifier(self) -> bool:
+        return len(self.cnt_formulas) > 0
 
     def append_ext(self, formula: QuantifiedFormula):
         self.ext_formulas.append(formula)
+        
+    def append_cnt(self, formula: QuantifiedFormula):
+        self.cnt_formulas.append(formula)
 
     def preds(self):
         p = self.uni_formula.preds() if self.uni_formula is not None else set()
@@ -35,10 +43,13 @@ class SNF(Formula):
     def __str__(self) -> str:
         s = ''
         if self.uni_formula is not None:
-            s += f'Universally quantified formula: {self.uni_formula}\n'
+            s += f'Universally quantified formula: {self.uni_formula}'
         if self.ext_formulas:
-            s += 'Existentially quantified formulas:\n'
+            s += '\nExistentially quantified formulas:\n'
             s += '\n'.join(map(str, self.ext_formulas))
+        if self.cnt_formulas:
+            s += '\nCounting quantified formulas:\n'
+            s += '\n'.join(map(str, self.cnt_formulas))
         return s
 
     def __repr__(self) -> str:
@@ -360,7 +371,7 @@ def standardize(formula: Formula) -> Formula:
     return formula
 
 
-def to_snf(formula: Formula) -> SNF:
+def to_sc2(formula: Formula) -> SC2:
     """
     The formula must satisify that a compound formula has at most one quantifier-free subformula
     """
@@ -400,7 +411,7 @@ def to_snf(formula: Formula) -> SNF:
     # here, the formula must only contain conjunctions
     bfs(formula, check_all_conjunction)
 
-    snf = SNF()
+    sc2 = SC2()
     uni_formulas: list[QFFormula] = []
     uni_quantifier_scopes: list[Universal] = []
     def collect_formula(formula: Formula,
@@ -412,13 +423,25 @@ def to_snf(formula: Formula) -> SNF:
             if all(isinstance(quantifier_scope, Universal) for quantifier_scope in quantifier_scopes):
                 uni_formulas.append(formula)
                 uni_quantifier_scopes.append(quantifier_scopes)
+            elif any(isinstance(quantifier_scope, Counting) for quantifier_scope in quantifier_scopes):
+                collected_formula = reduce(
+                    lambda x, y: QuantifiedFormula(y, x),
+                    quantifier_scopes[::-1],
+                    formula
+                )
+                if len(quantifier_scopes) == 2 and \
+                    isinstance(quantifier_scopes[0], Universal) and \
+                        isinstance(quantifier_scopes[1], Counting):
+                            sc2.append_cnt(collected_formula)
+                else:
+                    raise FOLSyntaxError(f"Not support fomula \"{collected_formula}\"")
             else:
                 collected_formula = reduce(
                     lambda x, y: QuantifiedFormula(y, x),
                     quantifier_scopes[::-1],
                     formula
                 )
-                snf.append_ext(collected_formula)
+                sc2.append_ext(collected_formula)
         elif isinstance(formula, Conjunction):
             collect_formula(formula.left_formula, quantifier_scopes)
             collect_formula(formula.right_formula, quantifier_scopes)
@@ -431,12 +454,12 @@ def to_snf(formula: Formula) -> SNF:
     for formula in uni_formulas:
         uni_formula &= formula
     if uni_formula == top:
-        snf.uni_formula = top
+        sc2.uni_formula = top
     else:
         max_uni_quantifier_scope = max(uni_quantifier_scopes, key=len)
-        snf.uni_formula = reduce(
+        sc2.uni_formula = reduce(
             lambda x, y: QuantifiedFormula(y, x),
             max_uni_quantifier_scope[::-1],
             uni_formula
         )
-    return snf
+    return sc2

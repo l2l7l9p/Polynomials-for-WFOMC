@@ -3,7 +3,7 @@ from __future__ import annotations
 from fractions import Fraction
 
 from lark import Lark
-from sampling_fo2.fol.snf import SNF, to_snf
+from sampling_fo2.fol.sc2 import SC2, to_sc2
 from sampling_fo2.fol.syntax import Const, Pred
 from sampling_fo2.network.constraint import CardinalityConstraint
 
@@ -71,7 +71,7 @@ class WFOMSTransformer(FOLTransformer):
         domain = args[1][1]
         weightings = args[2]
         cardinalities = args[3]
-        sentence = to_snf(sentence)
+        sentence = to_sc2(sentence)
 
         cc_constraints: dict[Pred, tuple[str, int]] = dict()
         if cardinalities is not None:
@@ -88,7 +88,7 @@ class WFOMSTransformer(FOLTransformer):
 
 
 def parse(text: str) -> \
-        tuple[SNF, set[Const], dict[Pred, tuple[Rational, Rational]], CardinalityConstraint]:
+        tuple[SC2, set[Const], dict[Pred, tuple[Rational, Rational]], CardinalityConstraint]:
     """
     Parse wfoms text into WFOMSContext
     """
