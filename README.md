@@ -1,8 +1,6 @@
-# Calculate F-poly or Tutte poly by WFOMC
+# Calculate polynomials by WFOMC
 
-This tool is for calculating the F-poly, Proposition 2 or the Tutte poly from the two-variable fragment of first-order logic.
-
-**Note that the special binary predicate should have default weights (1,1).**
+This tool is for calculating the F-poly, G-poly, Proposition 2 or the Tutte poly from the two-variable fragment of first-order logic.
 
 ## Input format
 
@@ -50,8 +48,6 @@ V = 6
 |E| = 12
 ```
 
-> Note: You need to convert SC2 sentence into FO2 sentence with cardinality constraints by yourself.
-
 Sampling possible worlds from `friends-smokes` MLN:
 
 ```
@@ -76,27 +72,29 @@ $ pip install -e .
 
 ### How to use
 
-```
-usage: fpoly.py [-h] --input INPUT [--output_dir OUTPUT_DIR] [--func {fpoly,prop2，tutte}] --pred PRED
-                [--debug]
+see `$ python sampling_fo2/main.py -h`. The usage is as follows.
 
-F-polynomial for MLN
+```
+usage: main.py [-h] --input INPUT [--output_dir OUTPUT_DIR] [--func {fpoly,gpoly,tutte,prop2}]
+               --pred PRED [--debug]
+
+Polynomials for MLN
 
 optional arguments:
   -h, --help            show this help message and exit
   --input INPUT, -i INPUT
                         mln file
   --output_dir OUTPUT_DIR, -o OUTPUT_DIR
-  --func {fpoly,prop2,tutte}, -f {fpoly,prop2,tutte}
+  --func {fpoly,gpoly,tutte,prop2}, -f {fpoly,gpoly,tutte,prop2}
                         the function wanted
   --pred PRED, -p PRED  the special binary predicate
   --debug
 ```
 
-E.g., 
+E.g., to get the F-poly for the predicate `S` in a complete graph formula, the command is:
 
 ```
-$ python sampling_fo2/fpoly.py -i models/complete_graph.wfomcs -f fpoly -p S
+$ python sampling_fo2/main.py -i models/complete_graph.wfomcs -f fpoly -p S
 ```
 
 ## References

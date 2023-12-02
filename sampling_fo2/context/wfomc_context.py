@@ -49,7 +49,7 @@ class WFOMCContext(object):
         return (default, default)
 
     def decode_result(self, res: RingElement):
-        if not self.contain_cardinality_constraint():
+        if (not self.contain_cardinality_constraint()) or (len(self.cardinality_constraint.gen_vars)==0) :
             return res
         return self.cardinality_constraint.decode_poly(res)
 

@@ -1,0 +1,7 @@
+\forall X: ((B1(X) | B2(X)) & (~B1(X) | ~B2(X))) &
+\forall X: ( \forall Y: ( (B1(X) & B1(Y)) -> ~E(X,Y) )) &
+\forall X: ( \forall Y: ( (B2(X) & B2(Y)) -> ~E(X,Y) ))
+
+V = 4
+|B1| = 2
+|B2| = 2
