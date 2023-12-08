@@ -20,26 +20,31 @@ class AdvPolys() :
         MultinomialCoefficients.setup(self.domain_size)
 
 
-    def _get_typed_two_table_weight(self, cell_i: Cell, cell_j: Cell, weight_type: int) :
-        if (weight_type==0) :
-            # ordinary two table weight
-            return self.cell_graph.get_two_table_weight((cell_i, cell_j))
-        elif (weight_type==-1) :
-            # two table weight when no edge between cell_i and cell_j
-            evidence_special_pred_false = frozenset([
-                AtomicFormula(self.special_pred,(Const('a'), Const('b')),False),
-                AtomicFormula(self.special_pred,(Const('b'), Const('a')),False) ])
-            return self.cell_graph.get_two_table_weight((cell_i, cell_j), evidence_special_pred_false)
-        elif (weight_type==1) :
-            # two table weight when cell_i <- cell_j is not allowed
-            evidence_special_pred_directed = frozenset([
-                AtomicFormula(self.special_pred,(Const('b'), Const('a')),False) ])
-            return self.cell_graph.get_two_table_weight((cell_i, cell_j), evidence_special_pred_directed)
+    def _get_conditional_two_table(self) :
+        '''
+        Precalculate the conditional two table weights
+        '''
+        self.cond_two_table_weight_ordinary = {}    # ordinary two table weight
+        self.cond_two_table_weight_noedge = {}    # two table weight when no edge between cell_i and cell_j
+        self.cond_two_table_weight_directed = {}    # two table weight when cell_i <- cell_j is not allowed
+        evidence_special_pred_false = frozenset([
+            AtomicFormula(self.special_pred,(Const('a'), Const('b')),False),
+            AtomicFormula(self.special_pred,(Const('b'), Const('a')),False) ])
+        evidence_special_pred_directed = frozenset([
+            AtomicFormula(self.special_pred,(Const('b'), Const('a')),False) ])
+        
+        cells = self.cell_graph.get_cells()
+        for cell_i in cells:
+            for cell_j in cells:
+                self.cond_two_table_weight_ordinary[(cell_i, cell_j)] = self.cell_graph.get_two_table_weight((cell_i, cell_j))
+                self.cond_two_table_weight_noedge[(cell_i, cell_j)] = self.cell_graph.get_two_table_weight((cell_i, cell_j), evidence_special_pred_false)
+                self.cond_two_table_weight_directed[(cell_i, cell_j)] = self.cell_graph.get_two_table_weight((cell_i, cell_j), evidence_special_pred_directed)
 
 
     def _F_poly_evaluate(self) -> list :
         cells = self.cell_graph.get_cells()
         n_cells = len(cells)
+        self._get_conditional_two_table()
         dp_last : dict[tuple[int], Rational] = {tuple([0 for i in cells]) : 1}
         dp_cur : dict[tuple[int], Rational] = {}
         evaluate = []
@@ -53,18 +58,13 @@ class AdvPolys() :
                         val_cur = Rational(1, 1) * coef * MultinomialCoefficients.comb(domain_size_last+domain_size_cur, domain_size_cur)
                         
                         for i, (cell_i, n_i) in enumerate(zip(cells, partition_cur)):
-                            if n_i == 0:
-                                continue
                             val_cur *= self.cell_graph.get_cell_weight(cell_i) ** n_i
-                            val_cur *= self._get_typed_two_table_weight(cell_i, cell_i, 0) ** (n_i * (n_i - 1) // 2)
+                            val_cur *= self.cond_two_table_weight_ordinary[(cell_i, cell_i)] ** (n_i * (n_i - 1) // 2)
                             for j, (cell_j, n_j) in enumerate(zip(cells, partition_cur)):
-                                if (j<=i or n_j==0):
-                                    continue
-                                val_cur *= self._get_typed_two_table_weight(cell_i, cell_j, 0) ** (n_i * n_j)
+                                if (j>i) :
+                                    val_cur *= self.cond_two_table_weight_ordinary[(cell_i, cell_j)] ** (n_i * n_j)
                             for j, (cell_j, n_j) in enumerate(zip(cells, partition_last)):
-                                if n_j == 0:
-                                    continue
-                                val_cur *= self._get_typed_two_table_weight(cell_i, cell_j, -1) ** (n_i * n_j)
+                                val_cur *= self.cond_two_table_weight_noedge[(cell_i, cell_j)] ** (n_i * n_j)
                         
                         partition_new = tuple(map(sum,zip(partition_last,partition_cur)))
                         dp_cur.update({partition_new: dp_cur.get(partition_new, 0)+val_last*val_cur})
@@ -81,6 +81,7 @@ class AdvPolys() :
     def _G_poly_evaluate(self) :
         cells = self.cell_graph.get_cells()
         n_cells = len(cells)
+        self._get_conditional_two_table()
         evaluate = [[] for i in range(self.domain_size+1)]
         
         dp_k_last : dict[tuple[int], Rational] = {tuple([0 for i in cells]) : 1}
@@ -96,18 +97,13 @@ class AdvPolys() :
                         val_cur = Rational(1, 1) * coef * MultinomialCoefficients.comb(domain_size_last+domain_size_cur, domain_size_cur)
                         
                         for i, (cell_i, n_i) in enumerate(zip(cells, partition_cur)):
-                            if n_i == 0:
-                                continue
                             val_cur *= self.cell_graph.get_cell_weight(cell_i) ** n_i
-                            val_cur *= self._get_typed_two_table_weight(cell_i, cell_i, 0) ** (n_i * (n_i - 1) // 2)
+                            val_cur *= self.cond_two_table_weight_ordinary[(cell_i, cell_i)] ** (n_i * (n_i - 1) // 2)
                             for j, (cell_j, n_j) in enumerate(zip(cells, partition_cur)):
-                                if (j<=i or n_j==0):
-                                    continue
-                                val_cur *= self._get_typed_two_table_weight(cell_i, cell_j, 0) ** (n_i * n_j)
+                                if (j>i) :
+                                    val_cur *= self.cond_two_table_weight_ordinary[(cell_i, cell_j)] ** (n_i * n_j)
                             for j, (cell_j, n_j) in enumerate(zip(cells, partition_last)):
-                                if n_j == 0:
-                                    continue
-                                val_cur *= self._get_typed_two_table_weight(cell_i, cell_j, 1) ** (n_i * n_j)
+                                val_cur *= self.cond_two_table_weight_directed[(cell_i, cell_j)] ** (n_i * n_j)
                         
                         partition_new = tuple(map(sum,zip(partition_last,partition_cur)))
                         dp_k_cur.update({partition_new: dp_k_cur.get(partition_new, 0)+val_last*val_cur})
@@ -125,12 +121,8 @@ class AdvPolys() :
                             
                             val_cur *= dp_k_cur[partition_cur]
                             for i, (cell_i, n_i) in enumerate(zip(cells, partition_cur)):
-                                if n_i == 0:
-                                    continue
                                 for j, (cell_j, n_j) in enumerate(zip(cells, partition_last)):
-                                    if n_j == 0:
-                                        continue
-                                    val_cur *= self._get_typed_two_table_weight(cell_i, cell_j, -1) ** (n_i * n_j)
+                                    val_cur *= self.cond_two_table_weight_noedge[(cell_i, cell_j)] ** (n_i * n_j)
                             
                             partition_new = tuple(map(sum,zip(partition_last,partition_cur)))
                             dp_l_cur.update({partition_new: dp_l_cur.get(partition_new, 0)+val_last*val_cur})
@@ -143,6 +135,7 @@ class AdvPolys() :
             
             dp_k_last = dp_k_cur.copy()
             dp_k_cur.clear()
+            # logger.info('evaluate at k=%s, %s', k, evaluate[k])
         
         return evaluate
 
