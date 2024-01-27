@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-import pandas as pd
 import functools
 
+from functools import reduce
 from typing import FrozenSet, List, Tuple
 from dataclasses import dataclass, field
 from logzero import logger
 from sympy import Poly
+from sampling_fo2.cell_graph.utils import conditional_on
 
 from sampling_fo2.fol.syntax import AtomicFormula, Pred, Term, a, b, X
 from sampling_fo2.fol.utils import get_predicates
 from sampling_fo2.utils import Rational
+from sampling_fo2.utils.third_typing import RingElement
 
 
 @dataclass(frozen=True)
@@ -82,71 +84,31 @@ class Cell(object):
 
 
 class TwoTable(object):
-    def __init__(self, model_table: pd.DataFrame, cell_1: Cell, cell_2: Cell):
-        """
-        The table containing the weight of all B-types.
-        Note the order of cell_1 and cell_2 matters!
-        """
-        self.model_table = model_table
-        self.cell_1: Cell = cell_1
-        self.cell_2: Cell = cell_2
+    def __init__(self, models: dict[frozenset[AtomicFormula], RingElement],
+                 gnd_lits: frozenset[AtomicFormula]):
+        self.models = models
+        self.gnd_lits = gnd_lits
 
-        self.evidences: FrozenSet[AtomicFormula] = frozenset(
-            self.cell_1.get_evidences(a).union(
-                self.cell_2.get_evidences(b)
-            )
-        )
-        self.model_table = self._conditional_on(self.evidences)
-
-    def _conditional_on(self, evidences: FrozenSet[AtomicFormula] = None) -> pd.DataFrame:
-        if evidences is None:
-            return self.model_table
-        table = self.model_table
-        for e in evidences:
-            atom = e.make_positive()
-            if atom in table.columns:
-                if e.positive:
-                    table = table[table[atom]]
-                else:
-                    table = table[~table[atom]]
-                if table.empty:
-                    return table
-        return table
-
-    def get_weight(self, evidences: FrozenSet[AtomicFormula] = None) -> Poly:
-        if not self.satisfiable(evidences):
+    def get_weight(self, evidence: FrozenSet[AtomicFormula] = None) -> Poly:
+        if not self.satisfiable(evidence):
             return Rational(0, 1)
-        table = self._conditional_on(evidences)
-        return functools.reduce(
+        conditional_models = conditional_on(self.models, self.gnd_lits, evidence)
+        ret = reduce(
             lambda a, b: a + b,
-            table.weight
+            conditional_models.values(),
+            Rational(0, 1)
         )
+        return ret
 
-    def get_two_tables(self, evidences: FrozenSet[AtomicFormula] = None) \
+    def get_two_tables(self, evidence: FrozenSet[AtomicFormula] = None) \
             -> Tuple[FrozenSet[AtomicFormula], Poly]:
-        two_tables = []
-        df = self._conditional_on(evidences)
-        if len(df) == 0:
-            logger.warning(
-                'Cell pair (%s, %s) with evidences %s is not satisfiable',
-                self.cell_1, self.cell_2, evidences
-            )
-            return two_table
-        for r in df.iterrows():
-            two_table = set()
-            for k, v in r[1].items():
-                if k == 'weight':
-                    weight = v
-                else:
-                    if v:
-                        two_table.add(k)
-                    else:
-                        two_table.add(~k)
-            two_tables.append((frozenset(two_table), weight))
-        return two_tables
+        if not self.satisfiable(evidence):
+            return tuple()
+        conditional_models = conditional_on(self.models, self.gnd_lits, evidence)
+        return tuple(conditional_models.items())
 
-    def satisfiable(self, evidences: FrozenSet[AtomicFormula] = None) -> bool:
-        table = self._conditional_on(evidences)
-        if table.empty:
+    def satisfiable(self, evidence: FrozenSet[AtomicFormula] = None) -> bool:
+        conditional_models = conditional_on(self.models, self.gnd_lits, evidence)
+        if len(conditional_models) == 0:
             return False
         return True

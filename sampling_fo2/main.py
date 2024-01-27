@@ -1,9 +1,3 @@
-'''
-Input: an FO formula
-Output: F-poly, G-poly, Prop.2 poly or Tutte poly of it
-'''
-
-
 from __future__ import annotations
 from collections import defaultdict
 
@@ -26,10 +20,10 @@ from sampling_fo2.advpolys import AdvPolys
 
 
 class Func(Enum):
-    FPOLY = 'fpoly'
-    GPOLY = 'gpoly'
+    WCP = 'wcp'
+    SCP = 'scp'
+    EWCP = 'ewcp'
     TUTTE = 'tutte'
-    PROP2 = 'prop2'
 
     def __str__(self):
         return self.value
@@ -37,7 +31,7 @@ class Func(Enum):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Polynomials for MLN',
+        description='Computing Polynomials from a C2 sentence',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('--input', '-i', type=str, required=True,
@@ -45,7 +39,7 @@ def parse_args():
     parser.add_argument('--output_dir', '-o', type=str,
                         default='./check-points')
     parser.add_argument('--func', '-f', type=Func,
-                        choices=list(Func), default=Func.FPOLY,
+                        choices=list(Func), default=Func.WCP,
                         help='the function wanted')
     parser.add_argument('--pred', '-p', type=str, required=True,
                         help='the special binary predicate')
@@ -64,25 +58,25 @@ if __name__ == '__main__':
         logzero.loglevel(logging.INFO)
     logzero.logfile('{}/log.txt'.format(args.output_dir), mode='w')
     
-    with Timer() as t:
-        problem = parse_input(args.input)
+    problem = parse_input(args.input)
     context = WFOMCContext(problem)
-    logger.info('Parse input: %ss', t)
-    
     polys = AdvPolys(context, Pred(args.pred, 2))
     
-    if (args.func==Func.FPOLY) :
-        f_poly = polys.F_poly()
+    if (args.func==Func.WCP) :
+        with Timer() as t:
+            wcp = polys.WCP()
+        logger.info('Time of computing WCP: %ss', t)
         
-    elif (args.func==Func.GPOLY) :
-        g_poly = polys.G_poly()
-        prop3 = g_poly.subs({Symbol('x'): -2, Symbol('y'): Symbol('y')-1}).expand()
-        # logger.info('Prop3: %s', prop3)
-        logger.info('Num of strongly connected: %s', -prop3.as_coefficients_dict()[Symbol('y')])
-        
-    elif (args.func==Func.PROP2) :
-        prop2 = polys.Prop2()
-        
+    elif (args.func==Func.SCP) :
+        with Timer() as t:
+            scp = polys.SCP()
+        logger.info('Time of computing SCP: %ss', t)
+    
+    elif (args.func==Func.EWCP) :
+        with Timer() as t:
+            ewcp = polys.extended_WCP()
+        logger.info('Time of computing extended WCP: %ss', t)
+    
     elif (args.func==Func.TUTTE) :
         tutte_poly = polys.Tutte_poly()
         logger.info('Tutte poly at (1,1): %s', tutte_poly.subs({Symbol('x'): 1, Symbol('y'): 1}))

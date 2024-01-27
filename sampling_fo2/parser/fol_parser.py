@@ -4,7 +4,7 @@ from sampling_fo2.fol.sc2 import to_sc2
 from sampling_fo2.fol.syntax import Existential
 from sampling_fo2.fol.utils import exactly_one
 
-from sampling_fo2.parser.fol_grammer import function_free_logic_grammar
+from sampling_fo2.parser.fol_grammar import function_free_logic_grammar
 from sampling_fo2.fol.syntax import *
 
 
@@ -17,6 +17,10 @@ Quantifiers = {
 }
 
 class FOLTransformer(Transformer):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.name2pred = {}
 
     def constant(self, args):
         return Const(args[0].value)
@@ -35,6 +39,7 @@ class FOLTransformer(Transformer):
         if terms is None:
             terms = []
         pred = Pred(pred_name, len(terms))
+        self.name2pred[pred_name] = pred
         return pred(*terms)
 
     def parenthesis(self, args):
@@ -95,6 +100,9 @@ class FOLTransformer(Transformer):
     def exactlyone(self, args):
         predicates = args[1]
         predicates = [Pred(p, 1) for p in predicates]
+        self.name2pred.update(
+            (p.name, p) for p in predicates
+        )
         return exactly_one(predicates)
 
     def predicates(self, args):

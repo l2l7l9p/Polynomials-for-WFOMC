@@ -76,7 +76,7 @@ class WFOMSTransformer(FOLTransformer):
         cc_constraints: dict[Pred, tuple[str, int]] = dict()
         if cardinalities is not None:
             for pred, op, param in cardinalities:
-                pred = sentence.pred_by_name(pred)
+                pred = self.name2pred.get(pred, None)
                 if not pred:
                     raise ValueError(f'Predicate {pred} not found')
                 cc_constraints[pred] = (op, param)

@@ -1,0 +1,5 @@
+\forall X: (~E(X,X) & Eq(X,X)) &
+\forall X: ( \forall Y: ( ~Eq(X,Y) -> (E(X,Y) | E(Y,X)) & (~E(X,Y) | ~E(Y,X)) ))
+
+V = 6
+|Eq| = 6

@@ -10,7 +10,7 @@ from .syntax import FOLSyntaxError
 
 
 class SC2(Formula):
-    def __init__(self, uni_formula: QuantifiedFormula = None, 
+    def __init__(self, uni_formula: QuantifiedFormula = None,
                        ext_formulas: list[QuantifiedFormula] = None,
                        cnt_formulas: list[QuantifiedFormula] = None):
         self.uni_formula: QuantifiedFormula = uni_formula
@@ -20,13 +20,13 @@ class SC2(Formula):
 
     def contain_existential_quantifier(self) -> bool:
         return len(self.ext_formulas) > 0
-    
+
     def contain_counting_quantifier(self) -> bool:
         return len(self.cnt_formulas) > 0
 
     def append_ext(self, formula: QuantifiedFormula):
         self.ext_formulas.append(formula)
-        
+
     def append_cnt(self, formula: QuantifiedFormula):
         self.cnt_formulas.append(formula)
 
@@ -222,7 +222,7 @@ def pop_quantifier_once(formula: Formula) -> Formula:
                 left.quantifier_scope,
                 formula.op(left.quantified_formula, right.quantified_formula)
             )
-    elif isinstance(right, QFFormula):
+    elif isinstance(right, QFFormula) and not isinstance(left.quantifier_scope, Counting):
         if left.quantified_var not in right.vars():
             return QuantifiedFormula(
                 left.quantifier_scope,
@@ -258,8 +258,8 @@ def distribute_quantifier(formula: Formula) -> Formula:
     return formula
 
 
-@transformer('Remove quantifier', (QuantifiedFormula,))
-def remove_quantifier(formula: Formula) -> Formula:
+@transformer('Remove existential quantifier', (QuantifiedFormula,))
+def remove_existential_quantifier(formula: Formula) -> Formula:
     # NOTE: only remove existential quantifier, we don't want
     # to complicate the resulting formulas
     assert not isinstance(formula.quantified_formula, CompoundFormula), \
@@ -392,11 +392,11 @@ def to_sc2(formula: Formula) -> SC2:
     logger.debug("Before standardize: %s", formula)
     formula = standardize(formula)
     logger.debug("After standardize: \n%s", pretty_print(formula))
-    formula, additional_formulas = dfs(formula, remove_quantifier)
+    formula, additional_formulas = dfs(formula, remove_existential_quantifier)
     scott_formula = formula # top
     for additional_formula in additional_formulas:
         scott_formula = scott_formula & additional_formula
-    logger.debug("After remove quantifier: \n%s", pretty_print(scott_formula))
+    logger.debug("After remove existential quantifier: \n%s", pretty_print(scott_formula))
     formula = standardize(scott_formula)
     logger.debug("After standardize: \n%s", pretty_print(formula))
     formula = rename_variables(
@@ -406,8 +406,9 @@ def to_sc2(formula: Formula) -> SC2:
         formula, 0, [X, Y, Z], {}
     )
     logger.debug("After rename variables: \n%s", pretty_print(formula))
-    formula = pop_quantifier(formula)
-    logger.debug("After pop quantifier: \n%s", pretty_print(formula))
+    # TODO: disable due to https://github.com/lucienwang1009/lifted_sampling_fo2/issues/8
+    # formula = pop_quantifier(formula)
+    # logger.debug("After pop quantifier: \n%s", pretty_print(formula))
     # here, the formula must only contain conjunctions
     bfs(formula, check_all_conjunction)
 

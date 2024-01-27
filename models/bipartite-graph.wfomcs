@@ -1,0 +1,6 @@
+\forall X: (~E(X,X)) &
+\forall X: ( \forall Y: ( E(X,Y) -> E(Y,X) )) &
+\forall X: ( (P1(X) | P2(X)) & (~P1(X) | ~P2(X)) ) &
+\forall X: ( \forall Y: ( (P1(X) & P1(Y) | P2(X) & P2(Y)) -> ~E(X,Y) ))
+
+V = 2

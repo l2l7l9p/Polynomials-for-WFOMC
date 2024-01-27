@@ -128,6 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 check-points/
+outputs/
 forclift.jar
 forclift_complex.jar
 tools/

@@ -1,4 +1,4 @@
-from .fol_grammer import function_free_logic_grammar
+from .fol_grammar import function_free_logic_grammar
 
 
 domain_grammar = r"""

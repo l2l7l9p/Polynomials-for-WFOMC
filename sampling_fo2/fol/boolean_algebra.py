@@ -16,16 +16,11 @@ if typing.TYPE_CHECKING:
 Symbol = Symbol
 
 
-atom2sym: Dict[AtomicFormula, Symbol] = dict()
 sym2atom: Dict[Symbol, AtomicFormula] = dict()
 
 
 def get_symbol(atom: AtomicFormula) -> Symbol:
-    # mask sure we store an "atom"
-    if atom in atom2sym:
-        return atom2sym.get(atom)
     s = Symbol(str(atom))
-    atom2sym[atom] = s
     sym2atom[s] = atom
     return s
 

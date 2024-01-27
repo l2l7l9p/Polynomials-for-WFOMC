@@ -5,9 +5,9 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='wfomc_tuttepoly',
+    name='WCP-SCP',
     version='0.1',
-    url='https://github.com/l2l7l9p/wfomc_tuttepoly',
+    url='https://github.com/l2l7l9p/WCP-SCP',
     author='Qipeng Kuang',
     author_email='kuangqipeng@connect.hku.hk',
     license='MIT',
@@ -26,7 +26,7 @@ setup(
                       "dataclasses",
                       "PrettyPrintTree"],
     python_requires='>=3.8',
-    description = ("Combining WFOMC and various polynomials such as Tutte Polynomial"),
+    description = ("Computing WCP, SCP and Tutte Polynomial for a C2 Sentence"),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-
+import functools
 from dataclasses import dataclass, field
 from typing import Callable, Iterable
 from collections import OrderedDict
@@ -30,6 +30,11 @@ __all__ = [
     'Negation',
     'BinaryFormula',
     'SCOTT_PREDICATE_PREFIX',
+    'AUXILIARY_PRED_NAME',
+    'TSEITIN_PRED_NAME',
+    'SKOLEM_PRED_NAME',
+    'EVIDOM_PRED_NAME',
+    'PREDS_FOR_EXISTENTIAL',
     'pretty_print',
     'X', 'Y', 'Z',
     'U', 'V', 'W',
@@ -48,11 +53,24 @@ class Term(object):
     name: str
 
 
-SCOTT_PREDICATE_PREFIX = 'scott'
+SCOTT_PREDICATE_PREFIX = '@scott'
+AUXILIARY_PRED_NAME = '@aux'
+TSEITIN_PRED_NAME = '@tseitin'
+SKOLEM_PRED_NAME = '@skolem'
+EVIDOM_PRED_NAME = '@evidom'
+PREDS_FOR_EXISTENTIAL = [
+    TSEITIN_PRED_NAME, SKOLEM_PRED_NAME, EVIDOM_PRED_NAME
+]
+
+
 RESERVED_PRED_NAMES: tuple[str] = (
     'true',
     'false',
-    SCOTT_PREDICATE_PREFIX
+    SCOTT_PREDICATE_PREFIX,
+    AUXILIARY_PRED_NAME,
+    TSEITIN_PRED_NAME,
+    SKOLEM_PRED_NAME,
+    EVIDOM_PRED_NAME
 )
 
 RESERVED_VAR_NAMES: tuple[str] = (
@@ -229,7 +247,8 @@ class AtomicFormula(QFFormula):
     pred: Pred
     args: tuple[Term]
     positive: bool
-    expr: backend.Expr = field(init=False, default=None)
+    expr: backend.Expr = field(init=False, default=None,
+                               hash=False, compare=False)
 
     def __post_init__(self):
         if len(self.args) != self.pred.arity:
@@ -242,10 +261,14 @@ class AtomicFormula(QFFormula):
         expr = expr if self.positive else backend.Not(expr)
         object.__setattr__(self, 'expr', expr)
 
+    @functools.lru_cache(maxsize=None)
     def __invert__(self):
         return AtomicFormula(self.pred, self.args, not self.positive)
 
+    @functools.lru_cache(maxsize=None)
     def make_positive(self):
+        if self.positive:
+            return self
         return AtomicFormula(self.pred, self.args, True)
 
     def __str__(self):
@@ -428,12 +451,17 @@ class QuantifiedFormula(Formula):
         return Negation(self)
 
     def __or__(self, other: Formula) -> Formula:
-        if isinstance(other, QFFormula):
+        # NOTE: (\exists_{=k} R(x,y)) | Q(x) and \exists_{=k} (R(x,y) | Q(x)) are not equivalent!!!
+        if isinstance(other, QFFormula) and \
+                self.quantified_var not in other.vars() and \
+                not isinstance(self.quantifier_scope, Counting):
             return QuantifiedFormula(self.quantifier_scope, self.quantified_formula | other)
         return Disjunction(self, other)
 
     def __and__(self, other: Formula) -> Formula:
-        if isinstance(other, QFFormula):
+        if isinstance(other, QFFormula) and \
+                self.quantified_var not in other.vars() and \
+                not isinstance(self.quantifier_scope, Counting):
             return QuantifiedFormula(self.quantifier_scope, self.quantified_formula & other)
         return Conjunction(self, other)
 
