@@ -6,12 +6,13 @@ from typing import Iterable, Generator
 from functools import reduce
 from itertools import accumulate, repeat
 
-from symengine import Rational, var, Expr, Symbol
+from symengine import var, Expr, Symbol
+from symengine import Rational as sym_Rational
 from symengine.lib.symengine_wrapper import lcm
 from decimal import Decimal
 from bisect import bisect_left
 
-Rational = Rational
+Rational = sym_Rational
 Poly = Expr
 
 

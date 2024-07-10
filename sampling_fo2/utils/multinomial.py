@@ -39,6 +39,23 @@ def multinomial_less_than(length: int, total_sum: int) -> tuple[int]:
                 yield (value, ) + permutation
 
 
+def multinomial_less_than_multinomial(length: int, another: tuple[int]) -> tuple[int]:
+    """
+    Generate a list of numbers, whose size is `length` and each element is less than `another`
+
+    """
+    if length == 0:
+        yield ()
+        return
+    if length == 1:
+        for i in range(another[0] + 1):
+            yield (i, )
+    else:
+        for value in range(another[length-1] + 1):
+            for permutation in multinomial_less_than_multinomial(length - 1, another):
+                yield permutation + (value, )
+
+
 class MultinomialCoefficients(object):
     """
     Multinomial coefficients

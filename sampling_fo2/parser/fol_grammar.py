@@ -37,10 +37,13 @@ function_free_logic_grammar = r"""
     implies: "->"
     iff: "<->"
     count_parameter: INT
-    ?comparator: equality | le | ge
+    ?comparator: equality | le | ge | lt | gt | nequality
     equality: "="
+    nequality: "!="
     le: "<="
     ge: ">="
+    lt: "<"
+    gt: ">"
     LCASE_CNAME: LCASE_LETTER ("_"|LCASE_LETTER|DIGIT)*
 
     %import common.LCASE_LETTER
@@ -50,6 +53,7 @@ function_free_logic_grammar = r"""
     %import common.FLOAT
     %import common.INT
     %import common.SIGNED_NUMBER
+    %import common.NUMBER
     %import common.WS
     %import common.SH_COMMENT
     %ignore WS

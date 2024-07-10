@@ -1,4 +1,5 @@
 from .fol_grammar import function_free_logic_grammar
+from .cardinality_constraints_grammar import cc_grammar
 
 
 domain_grammar = r"""
@@ -11,17 +12,10 @@ domain_grammar = r"""
 """
 
 
-cardinality_grammar = r"""
-    cardinalities: cardinality*
-    cardinality: "|" predicate "|" comparator cardinality_param
-    cardinality_param: INT
-"""
-
-
 grammar = r"""
-    ?wfomcs: ffl domain weightings cardinalities
+    ?wfomcs: ffl domain weightings cardinality_constraints
     weightings: weighting*
     weighting: weight weight predicate
 
     weight: FLOAT | INT
-""" + domain_grammar + cardinality_grammar + function_free_logic_grammar
+""" + domain_grammar + cc_grammar + function_free_logic_grammar

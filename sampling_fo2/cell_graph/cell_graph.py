@@ -324,7 +324,11 @@ class OptimizedCellGraph(CellGraph):
             if self.get_two_table_weight((self.cells[i], self.cells[i])) != Rational(1, 1):
                 self_loop.add(i)
 
-        i1_ind = set(nx.maximal_independent_set(g.subgraph(g.nodes-self_loop)))
+        non_self_loop = g.nodes - self_loop
+        if len(non_self_loop) == 0:
+            i1_ind = set()
+        else:
+            i1_ind = set(nx.maximal_independent_set(g, nodes= g.nodes - self_loop))
         g_ind = set(nx.maximal_independent_set(g, nodes=i1_ind))
         i2_ind = g_ind.difference(i1_ind)
         non_ind = g.nodes - i1_ind - i2_ind
@@ -431,12 +435,7 @@ class OptimizedCellGraph(CellGraph):
             if self.modified_cell_symmetry:
                 thesum = thesum * self.get_cell_weight(self.cliques[l][0]) ** nhat
         else:
-            r = self.get_two_table_weight(
-                (self.cliques[l][0], self.cliques[l][1]))
-            thesum = (
-                (r ** MultinomialCoefficients.comb(nhat, 2)) *
-                self.get_d_term(l, nhat)
-            )
+            thesum = self.get_d_term(l, nhat)
         return thesum
 
     @functools.lru_cache(maxsize=None)
@@ -448,9 +447,9 @@ class OptimizedCellGraph(CellGraph):
             if self.modified_cell_symmetry:
                 w = self.get_cell_weight(self.cliques[l][cur]) ** n
                 s = self.get_two_table_weight((self.cliques[l][cur], self.cliques[l][cur]))
-                ret = w * (s / r) ** MultinomialCoefficients.comb(n, 2)
+                ret = w * s ** MultinomialCoefficients.comb(n, 2)
             else:
-                ret = (s / r) ** MultinomialCoefficients.comb(n, 2)
+                ret = s ** MultinomialCoefficients.comb(n, 2)
         else:
             ret = 0
             for ni in range(n + 1):
@@ -459,7 +458,8 @@ class OptimizedCellGraph(CellGraph):
                     w = self.get_cell_weight(self.cliques[l][cur]) ** ni
                     s = self.get_two_table_weight((self.cliques[l][cur], self.cliques[l][cur]))
                     mult = mult * w
-                mult = mult * ((s / r) ** MultinomialCoefficients.comb(ni, 2))
+                mult = mult * (s ** MultinomialCoefficients.comb(ni, 2))
+                mult = mult * r ** (ni * (n - ni))
                 mult = mult * self.get_d_term(l, n - ni, cur + 1)
                 ret = ret + mult
         return ret

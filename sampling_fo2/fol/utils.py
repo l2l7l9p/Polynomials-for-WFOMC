@@ -103,6 +103,6 @@ def convert_counting_formula(formula: QuantifiedFormula, domain: set[Const]):
         or_sub_aux_atoms = or_sub_aux_atoms | atom
     uni_formula = uni_formula & or_sub_aux_atoms.equivalent(aux_atom)
     # (6)
-    cardinality_constraint = (aux_pred, ('=', len(domain) * count_param))
+    cardinality_constraint = (aux_pred, '=', len(domain) * count_param)
 
     return uni_formula, ext_formulas, cardinality_constraint, repeat_factor

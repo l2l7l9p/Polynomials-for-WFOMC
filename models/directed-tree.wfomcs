@@ -1,0 +1,5 @@
+\forall X: (~root(X) -> \exists Y: (E(Y,X)))
+
+V = 6
+|root| = 1
+|E| = 5

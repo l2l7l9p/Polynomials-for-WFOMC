@@ -4,8 +4,9 @@ from fractions import Fraction
 
 from lark import Lark
 from sampling_fo2.fol.sc2 import SC2, to_sc2
-from sampling_fo2.fol.syntax import Const, Pred
+from sampling_fo2.fol.syntax import Const, Formula, Pred
 from sampling_fo2.network.constraint import CardinalityConstraint
+from sampling_fo2.parser.cardinality_constraints_parser import CCTransfomer
 
 from sampling_fo2.parser.fol_parser import FOLTransformer
 from sampling_fo2.parser.wfomcs_grammar import grammar
@@ -13,7 +14,7 @@ from sampling_fo2.problems import WFOMCSProblem
 from sampling_fo2.utils import Rational
 
 
-class WFOMSTransformer(FOLTransformer):
+class WFOMSTransformer(FOLTransformer, CCTransfomer):
 
     def domain_elements(self, args):
         return list(args)
@@ -36,18 +37,6 @@ class WFOMSTransformer(FOLTransformer):
             domain_spec = set(f'{domain_name}{i}' for i in range(domain_spec))
         return (domain_name, domain_spec)
 
-    def cardinality_param(self, args):
-        return int(args[0])
-
-    def cardinality(self, args):
-        pred, op, param = args
-        return (pred, op, param)
-
-    def cardinalities(self, args):
-        if len(args) == 0:
-            return None
-        return list(args)
-
     def weightings(self, args):
         return dict(args)
 
@@ -66,21 +55,30 @@ class WFOMSTransformer(FOLTransformer):
     def weight(self, args):
         return str(args[0])
 
-    def wfomcs(self, args):
+    def wfomcs(self, args) -> \
+            tuple[SC2, set[Const], dict[Pred, tuple[Rational, Rational]],
+                  CardinalityConstraint]:
         sentence = args[0]
         domain = args[1][1]
         weightings = args[2]
-        cardinalities = args[3]
-        sentence = to_sc2(sentence)
+        cardinality_constraints = args[3]
+        try:
+            sentence = to_sc2(sentence)
+        except:
+            raise ValueError('Sentence must be a valid SC2 formula.')
 
-        cc_constraints: dict[Pred, tuple[str, int]] = dict()
-        if cardinalities is not None:
-            for pred, op, param in cardinalities:
-                pred = self.name2pred.get(pred, None)
-                if not pred:
-                    raise ValueError(f'Predicate {pred} not found')
-                cc_constraints[pred] = (op, param)
-            cardinality_constraint = CardinalityConstraint(cc_constraints)
+        ccs: list[tuple[dict[Pred, float], str, float]] = list()
+        if len(cardinality_constraints) > 0:
+            for cc in cardinality_constraints:
+                new_expr = dict()
+                expr, comparator, param = cc
+                for pred_name, coef in expr.items():
+                    pred = self.name2pred.get(pred_name, None)
+                    if not pred:
+                        raise ValueError(f'Predicate {pred_name} not found')
+                    new_expr[pred] = coef
+                ccs.append((new_expr, comparator, param))
+            cardinality_constraint = CardinalityConstraint(ccs)
         else:
             cardinality_constraint = None
 

@@ -245,16 +245,28 @@ def distribute_quantifier(formula: Formula) -> Formula:
     """
     quantified_formula = formula.quantified_formula
     if isinstance(quantified_formula, CompoundFormula):
-        return quantified_formula.op(
-            QuantifiedFormula(
-                formula.quantifier_scope,
-                quantified_formula.left_formula
-            ),
-            QuantifiedFormula(
-                formula.quantifier_scope,
-                quantified_formula.right_formula
+        if (
+            isinstance(quantified_formula, Conjunction) and
+            isinstance(formula.quantifier_scope, Universal)
+        ) or (
+            isinstance(quantified_formula, Disjunction) and
+            isinstance(formula.quantifier_scope, Existential)
+        ):
+            return quantified_formula.op(
+                QuantifiedFormula(
+                    formula.quantifier_scope,
+                    quantified_formula.left_formula
+                ),
+                QuantifiedFormula(
+                    formula.quantifier_scope,
+                    quantified_formula.right_formula
+                )
             )
-        )
+        else:
+            raise FOLSyntaxError(
+                'Not support quantifier distribution for {}'.format(
+                    quantified_formula)
+            )
     return formula
 
 

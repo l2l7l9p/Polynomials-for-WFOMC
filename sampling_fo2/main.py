@@ -21,7 +21,8 @@ from sampling_fo2.advpolys import AdvPolys
 
 class Func(Enum):
     WCP = 'wcp'
-    SCP = 'scp'
+    NSCP = 'nscp'
+    SSCP = 'sscp'
     EWCP = 'ewcp'
     TUTTE = 'tutte'
 
@@ -67,10 +68,19 @@ if __name__ == '__main__':
             wcp = polys.WCP()
         logger.info('Time of computing WCP: %ss', t)
         
-    elif (args.func==Func.SCP) :
+    elif (args.func==Func.NSCP) :
         with Timer() as t:
-            scp = polys.SCP()
-        logger.info('Time of computing SCP: %ss', t)
+            scp = polys.SCP(False)
+        logger.info('Time of computing NSCP: %ss', t)
+        # scp = scp.subs({Symbol('u'): 0, Symbol('v'): -2}).expand()
+        # logger.info(scp)
+    
+    elif (args.func==Func.SSCP) :
+        with Timer() as t:
+            scp = polys.SCP(True)
+        logger.info('Time of computing SSCP: %ss', t)
+        scp = scp.subs({Symbol('u'): 0, Symbol('v'): -2}).expand()
+        logger.info(scp)
     
     elif (args.func==Func.EWCP) :
         with Timer() as t:

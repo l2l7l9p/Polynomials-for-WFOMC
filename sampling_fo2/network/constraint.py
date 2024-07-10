@@ -30,24 +30,30 @@ class TreeConstraint(Constraint):
 
 
 class CardinalityConstraint(Constraint):
-    def __init__(self, pred2card: dict[Pred, tuple[str, int]] = None):
-        self.pred2card: dict[Pred, tuple[str, int]] = dict()
-        if pred2card:
-            self.pred2card: dict[Pred, tuple[str, int]] = pred2card
+    def __init__(self, constraints: list[tuple[dict[Pred, float], str, float]] = None):
+        self.constraints: list[tuple[dict[Pred, float], str, float]] = constraints
+        if self.constraints is None:
+            self.constraints = list()
 
+        self.preds: set[Pred] = set()
+        if self.constraints is not None:
+            for constraint in self.constraints:
+                self.preds.update(constraint[0].keys())
 
-    def preds(self):
-        return list(self.pred2card.keys())
+        self.gen_vars: list[Symbol]
+        self.var2pred: dict[Symbol, Pred] = dict()
+        self.validator: str = ""
 
     def transform_weighting(self, get_weight: Callable[[Pred], tuple[Rational, Rational]]) \
             -> dict[Pred, tuple[Rational, Rational]]:
         new_weights: dict[Pred, tuple[RingElement, RingElement]] = {}
         self.gen_vars = create_vars('x0:{}'.format(
-            len(self.pred2card))
+            len(self.preds))
         )
-        for sym, pred in zip(self.gen_vars, self.pred2card.keys()):
+        for sym, pred in zip(self.gen_vars, self.preds):
             weight = get_weight(pred)
             new_weights[pred] = (weight[0] * sym, weight[1])
+            self.var2pred[sym] = pred
         return new_weights
 
     def decode_poly(self, poly: RingElement) -> RingElement:
@@ -61,26 +67,43 @@ class CardinalityConstraint(Constraint):
         return res
 
     def valid(self, degrees: list[int]) -> bool:
-        return eval(self.validator.format(*degrees))
+        kwargs = zip((self.var2pred[sym].name for sym in self.gen_vars), degrees)
+        return eval(self.validator.format(**dict(kwargs)))
 
-    def add(self, k: Pred, v: tuple[str, int]):
-        self.pred2card[k] = v
+    def extend_simple_constraints(self, ccs: list[tuple[Pred, str, int]]):
+        for pred, comp, card in ccs:
+            self.add_simple_constraint(pred, comp, card)
+
+    def add_simple_constraint(self, pred: Pred, comp: str, card: int):
+        """
+        Add a constraint of the form |pred| comp card
+        """
+        self.constraints.append(({pred: 1}, comp, card))
+        self.preds.add(pred)
+
+    def add(self, expr: dict[Pred, float], comp: str, param: float):
+        self.constraints.append((expr, comp, param))
+        self.preds.update(expr.keys())
 
     def build(self):
-        self.gen_vars: list[Symbol] = list()
-        self.validator: str = ''
         validator_list: list[str] = []
-        for _, (comp, card) in self.pred2card.items():
+        for expr, comp, param in self.constraints:
+            single_validator = []
+            for pred, coef in expr.items():
+                single_validator.append(f'{coef} * {{{pred.name}}}')
+            single_validator = ' + '.join(single_validator)
             if comp == '=':
                 comp = '=='
-            validator_list.append('{{}} {} {}'.format(comp, card))
+            validator_list.append(f'{single_validator} {comp} {param}')
         self.validator = ' and '.join(validator_list)
-        logger.info('cardinality validator: %s', self.validator)
+        logger.info('cardinality validator: \n%s', self.validator)
 
     def __str__(self):
         s = ''
-        for pred, (op, card) in self.pred2card.items():
-            s += '|{}| {} {} and '.format(pred, op, card)
+        for expr, comp, param in self.constraints:
+            s += ' + '.join(f'{coef} * |{pred.name}|' for pred, coef in expr.items())
+            s += ' {} {}'.format(comp, param)
+            s += '\n'
         return s
 
     def __repr__(self):

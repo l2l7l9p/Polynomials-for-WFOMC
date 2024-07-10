@@ -1,4 +1,5 @@
 from .fol_grammar import function_free_logic_grammar
+from .cardinality_constraints_grammar import cc_grammar
 
 domain_grammar = r"""
     domain: domain_name "=" domain_spec
@@ -7,12 +8,6 @@ domain_grammar = r"""
         | ("{" domain_elements "}") -> set_domain
     domain_elements: element ("," element)*
     element: CNAME
-"""
-
-cardinality_grammar = r"""
-    cardinalities: cardinality*
-    cardinality: "|" predicate "|" comparator cardinality_param
-    cardinality_param: INT
 """
 
 rule_grammar = r"""
@@ -24,5 +19,5 @@ rule_grammar = r"""
 """ + function_free_logic_grammar
 
 grammar = r"""
-    ?mln: rules domain cardinalities
-""" + rule_grammar + domain_grammar + cardinality_grammar
+    ?mln: rules domain cardinality_constraints
+""" + rule_grammar + domain_grammar + cc_grammar

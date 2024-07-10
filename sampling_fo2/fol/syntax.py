@@ -451,7 +451,6 @@ class QuantifiedFormula(Formula):
         return Negation(self)
 
     def __or__(self, other: Formula) -> Formula:
-        # NOTE: (\exists_{=k} R(x,y)) | Q(x) and \exists_{=k} (R(x,y) | Q(x)) are not equivalent!!!
         if isinstance(other, QFFormula) and \
                 self.quantified_var not in other.vars() and \
                 not isinstance(self.quantifier_scope, Counting):
@@ -484,11 +483,6 @@ class QuantifiedFormula(Formula):
 
     def is_exist(self) -> bool:
         return self.exist is not None
-
-    def Equate(self, other: QuantifiedFormula) -> QuantifiedFormula:
-        raise FOLSyntaxError(
-            'Not support conjunct two formula'
-        )
 
     def __str__(self):
         return '{}: {}'.format(self.quantifier_scope, str(self.quantified_formula))

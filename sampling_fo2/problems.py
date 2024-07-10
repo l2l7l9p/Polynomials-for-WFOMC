@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sampling_fo2.fol.sc2 import SC2, to_sc2
-from sampling_fo2.fol.syntax import Const, Pred, top, AUXILIARY_PRED_NAME, \
+from sampling_fo2.fol.syntax import AtomicFormula, Const, Pred, top, AUXILIARY_PRED_NAME, \
     Formula, QuantifiedFormula, Universal, Equivalence
 from sampling_fo2.fol.utils import new_predicate
 from sampling_fo2.network.constraint import CardinalityConstraint
@@ -18,11 +18,27 @@ class WFOMCSProblem(object):
     def __init__(self, sentence: SC2,
                  domain: set[Const],
                  weights: dict[Pred, tuple[Rational, Rational]],
-                 cardinality_constraint: CardinalityConstraint):
+                 cardinality_constraint: CardinalityConstraint = None):
         self.domain: set[Const] = domain
         self.sentence: SC2 = sentence
         self.weights: dict[Pred, tuple[Rational, Rational]] = weights
         self.cardinality_constraint: CardinalityConstraint = cardinality_constraint
+
+    def __str__(self) -> str:
+        s = ''
+        s += 'Domain: \n'
+        s += '\t' + str(self.domain) + '\n'
+        s += 'Sentence: \n'
+        s += '\t' + str(self.sentence) + '\n'
+        s += 'Weights: \n'
+        s += '\t' + str(self.weights) + '\n'
+        if self.cardinality_constraint is not None:
+            s += 'Cardinality Constraint: \n'
+            s += '\t' + str(self.cardinality_constraint) + '\n'
+        return s
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 class MLNProblem(object):
@@ -54,5 +70,8 @@ def MLN_to_WFOMC(mln: MLNProblem):
             formula = QuantifiedFormula(Universal(free_var), formula)
         sentence = sentence & formula
 
-    sc2 = to_sc2(sentence)
-    return WFOMCSProblem(sc2, mln.domain, weightings, mln.cardinality_constraint)
+    try:
+        sentence = to_sc2(sentence)
+    except:
+        raise ValueError('Sentence must be a valid SC2 formula.')
+    return WFOMCSProblem(sentence, mln.domain, weightings, mln.cardinality_constraint)

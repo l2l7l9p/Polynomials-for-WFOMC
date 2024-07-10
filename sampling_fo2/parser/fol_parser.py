@@ -69,11 +69,20 @@ class FOLTransformer(Transformer):
     def equality(self, args):
         return '='
 
+    def nequality(self, args):
+        return '!='
+
     def le(self, args):
         return '<='
 
     def ge(self, args):
         return '>='
+
+    def lt(self, args):
+        return '<'
+
+    def gt(self, args):
+        return '>'
 
     def count_parameter(self, args):
         param = int(args[0])
@@ -109,6 +118,14 @@ class FOLTransformer(Transformer):
         return list(args)
 
 
+def parse(text: str) -> Formula:
+    fol_parser = Lark(function_free_logic_grammar, start='ffl')
+    tree = fol_parser.parse(text)
+    transformer = FOLTransformer()
+    formula = transformer.transform(tree)
+    return formula
+
+
 if __name__ == '__main__':
     text = r"""
         # \forall X: (\forall Y: ((fr(X,Y) -> fr(Y,X))))
@@ -127,7 +144,7 @@ if __name__ == '__main__':
         | \forall X: (\exists Y: (f(X,Y)) <-> \forall Y: (f(X, Y)))
     """
     text = r"""
-        ExactlyOne[A, N, B]
+        \forall X: (\forall Y: (A(X,Y)) | \forall Y: (B(X,Y)))
     """
     fol_parser = Lark(function_free_logic_grammar,
                       start='ffl')
