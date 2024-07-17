@@ -72,15 +72,11 @@ if __name__ == '__main__':
         with Timer() as t:
             scp = polys.SCP(False)
         logger.info('Time of computing NSCP: %ss', t)
-        # scp = scp.subs({Symbol('u'): 0, Symbol('v'): -2}).expand()
-        # logger.info(scp)
     
     elif (args.func==Func.SSCP) :
         with Timer() as t:
             scp = polys.SCP(True)
         logger.info('Time of computing SSCP: %ss', t)
-        scp = scp.subs({Symbol('u'): 0, Symbol('v'): -2}).expand()
-        logger.info(scp)
     
     elif (args.func==Func.EWCP) :
         with Timer() as t:

@@ -82,10 +82,10 @@ class AdvPolys() :
         return evaluate
 
 
-    def _SCP_evaluate(self, is_sscp) :
-        cells = self.cell_graph.get_cells() if not is_sscp else self.cell_graph.get_cells(lambda x: not x.is_positive(self.special_pred))
+    def _SCP_evaluate(self, strictness) :
+        cells = self.cell_graph.get_cells() if not strictness else self.cell_graph.get_cells(lambda x: not x.is_positive(self.special_pred))
         n_cells = len(cells)
-        self._dp_preprocess(cells, is_sscp)
+        self._dp_preprocess(cells, strictness)
         evaluate = [[] for i in range(self.domain_size+1)]
         
         for v in range(self.domain_size+1) :
@@ -135,7 +135,7 @@ class AdvPolys() :
     def WCP(self) :
         '''
         Return the Weak Connectedness Polynomial in the form of symengine expr
-        To evaluate wcp(u0) for some u0, use wcp.subs(Symbol('u'),u0)
+        To evaluate wcp(u0) for some u0, use wcp.subs(Symbol('u'),u0).expand()
         '''
         self.cell_graph = CellGraph(self.context.formula, self.context.get_weight)
         
@@ -150,7 +150,7 @@ class AdvPolys() :
     def SCP(self, strictness) :
         '''
         Return the Strong Connectedness Polynomial in the form of symengine expr
-        To evaluate scp(u0, v0) for some u0 and v0, use scp.subs({Symbol('u'): u0, Symbol('v'): v0})
+        To evaluate scp(u0, v0) for some u0 and v0, use scp.subs({Symbol('u'): u0, Symbol('v'): v0}).expand()
         '''
         self.cell_graph = CellGraph(self.context.formula, self.context.get_weight)
         
@@ -165,7 +165,7 @@ class AdvPolys() :
     def extended_WCP(self) :
         '''
         Return the extended Weak Connectedness Polynomial in the form of symengine expr
-        To evaluate ewcp(u0, v0) for some u0 and v0, use ewcp.subs({Symbol('u'): u0, Symbol('v'): v0})
+        To evaluate ewcp(u0, v0) for some u0 and v0, use ewcp.subs({Symbol('u'): u0, Symbol('v'): v0}).expand()
         '''
         special_pred_original_weight = self.context.get_weight(self.special_pred)
         self.context.weights.update({self.special_pred: (special_pred_original_weight[0]*Symbol('v'), special_pred_original_weight[1])})
@@ -184,7 +184,7 @@ class AdvPolys() :
     def Tutte_poly(self) :
         '''
         Return the Tutte Polynomial in the form of symengine expr
-        To evaluate tutte_poly(x0,y0) for some x0 and y0, use tutte_poly.subs({Symbol('x'): x0, Symbol('y'): y0})
+        To evaluate tutte_poly(x0,y0) for some x0 and y0, use tutte_poly.subs({Symbol('x'): x0, Symbol('y'): y0}).expand()
         '''
         ewcp = self.extended_WCP()
         x, y, u, v = Symbol('x'), Symbol('y'), Symbol('u'), Symbol('v')

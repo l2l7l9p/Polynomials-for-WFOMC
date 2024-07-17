@@ -5,9 +5,9 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='WCP-SCP',
+    name='Polynomials-for-WFOMC',
     version='0.1',
-    url='https://github.com/l2l7l9p/WCP-SCP',
+    url='https://github.com/l2l7l9p/Polynomials-for-WFOMC',
     author='Qipeng Kuang',
     author_email='kuangqipeng@connect.hku.hk',
     license='MIT',
@@ -26,7 +26,7 @@ setup(
                       "dataclasses",
                       "PrettyPrintTree"],
     python_requires='>=3.8',
-    description = ("Computing WCP, SCP and Tutte Polynomial for a C2 Sentence"),
+    description = ("Computing polynomials for WFOMC for a C2 Sentence with cardinality constraints"),
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -34,5 +34,5 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
     ],
-    keywords="WFOMC Tutte-polynomial",
+    keywords="Weighted First-Order Model Counting, Axiom, Enumerative Combinatorics, Tutte Polynomial",
 )
