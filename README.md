@@ -2,6 +2,24 @@
 
 This tool is for computing Weak Connectedness Polynomial (WCP), Strict Strong Connectedness Polynomial (SSCP), Non-strict Strong Connectedness Polynomial (NSCP), Extended WCP and Tutte Polynomial from a given $C^2$ sentence with cardinality constraints.
 
+## References
+
+```
+@inproceedings{DBLP:conf/csl/KuangKW026,
+  author       = {Qipeng Kuang and
+                  Ondrej Kuzelka and
+                  Yuanhong Wang and
+                  Yuyi Wang},
+  title        = {Bridging Weighted First Order Model Counting and Graph Polynomials},
+  booktitle    = {{CSL}},
+  series       = {LIPIcs},
+  volume       = {363},
+  pages        = {7:1--7:23},
+  publisher    = {Schloss Dagstuhl - Leibniz-Zentrum f{\"{u}}r Informatik},
+  year         = {2026}
+}
+```
+
 ## Input format
 
 1. First-order sentence with at most two logic variables, see [fol_grammar.py](sampling_fo2/parser/fol_grammar.py) for details, e.g.,
@@ -119,18 +137,4 @@ E.g., to get the WCP for the predicate `E` in the sentence encoding an arbitrary
 
 ```
 $ python sampling_fo2/main.py -i models/arbitrary-undirected-graph.wfomcs -f wcp -p E
-```
-
-## References
-
-```
-@misc{kuang2024bridgingweightedordermodel,
-      title={Bridging Weighted First Order Model Counting and Graph Polynomials}, 
-      author={Qipeng Kuang and Ondřej Kuželka and Yuanhong Wang and Yuyi Wang},
-      year={2024},
-      eprint={2407.11877},
-      archivePrefix={arXiv},
-      primaryClass={cs.LO},
-      url={https://arxiv.org/abs/2407.11877}, 
-}
 ```
